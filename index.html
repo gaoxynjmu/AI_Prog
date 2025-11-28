@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>铜钵冥想声音模拟</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
+      background: #f5f5f7;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 12px 40px;
+    }
+
+    .cover {
+      max-width: 98px;
+      width: 10%;
+      margin: 0 auto 16px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+    }
+
+    .cover img {
+      width: 100%;
+      display: block;
+    }
+
+    h1 {
+      margin: 0 0 16px;
+      font-size: 24px;
+      font-weight: 600;
+      color: #3b2a1a;
+      text-align: center;
+    }
+
+    .author-tag {
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: #7a6a5b;
+    }
+
+    .top-row {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .bowl {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 10px 18px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 600;
+      color: #21140a;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.7);
+      transition: transform 0.08s ease-out, box-shadow 0.08s ease-out, filter 0.12s;
+      user-select: none;
+    }
+
+    .bowl::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 26px;
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.85), rgba(255,255,255,0) 60%);
+      pointer-events: none;
+    }
+
+    .bowl-1 {
+      background: radial-gradient(circle at 30% 20%, #f4d4a4, #8a4c23 60%, #5c300f 100%);
+    }
+    .bowl-2 {
+      background: radial-gradient(circle at 30% 20%, #f5d2b0, #a85a2a 60%, #6b3513 100%);
+    }
+    .bowl-3 {
+      background: radial-gradient(circle at 30% 20%, #ffe4a6, #c9922b 60%, #8b5a11 100%);
+    }
+    .bowl-4 {
+      background: radial-gradient(circle at 30% 20%, #ffe0bb, #d08a3a 60%, #9b5a18 100%);
+    }
+
+    .bowl:active, .bowl.playing {
+      transform: translateY(2px) scale(0.98);
+      box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+      filter: brightness(1.05);
+    }
+
+    .layout {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      width: 100%;
+      max-width: 980px;
+    }
+
+    .left-column {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      flex: 0 0 auto;
+    }
+
+    .bowl-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(140px, 1fr));
+      gap: 24px;
+      justify-items: center;
+      align-items: center;
+      flex: 1 1 360px;
+    }
+
+    .right-panel {
+      flex: 1 1 360px;
+      max-width: 460px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.12);
+      padding: 18px 20px 20px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #4a3322;
+    }
+
+    .btn-small {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      background: #8b5a2b;
+      color: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.18);
+      transition: background 0.15s, transform 0.05s, box-shadow 0.05s;
+    }
+    .btn-small:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #e3d6cb;
+      margin: 0 -20px 12px;
+      padding: 0 20px;
+      overflow-x: auto;
+    }
+
+    .tab {
+      padding: 8px 18px;
+      font-size: 14px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      color: #8b6a4a;
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      border-bottom-color: #8b5a2b;
+      color: #4a3322;
+      font-weight: 600;
+    }
+
+    .tab + .tab { margin-left: 4px; }
+
+    .param-row {
+      margin-bottom: 16px;
+    }
+
+    .param-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 4px;
+      color: #6b5742;
+    }
+
+    .param-name { font-weight: 500; }
+
+    .param-value { font-variant-numeric: tabular-nums; }
+
+    input[type="range"] {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 4px;
+      border-radius: 999px;
+      background: #dfd4ca;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #8b5a2b;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+      cursor: pointer;
+      border: 2px solid #f7efe7;
+      margin-top: -6px;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #8b5a2b;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+      cursor: pointer;
+      border: 2px solid #f7efe7;
+    }
+
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 6px 0 8px;
+    }
+
+    .preset-btn {
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: none;
+      background: #b87333;
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.18);
+      transition: background 0.15s, transform 0.05s, box-shadow 0.05s;
+    }
+
+    .preset-btn:hover { background: #c78037; }
+
+    .preset-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: #7a6a5b;
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
+    .status-line {
+      font-size: 12px;
+      color: #7a6a5b;
+      margin-top: 6px;
+    }
+
+    .status-line span {
+      display: inline-block;
+      min-width: 60px;
+    }
+
+    .auto-controls {
+      margin-top: 32px;
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .auto-btn {
+      width: 120px;
+      height: 90px;
+      border-radius: 24px;
+      border: none;
+      background: linear-gradient(180deg, #d47b24, #c06a20);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.4;
+      letter-spacing: 0.5px;
+      transition: transform 0.08s ease-out, box-shadow 0.08s ease-out, filter 0.12s;
+    }
+
+    .auto-btn span.sub {
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    .auto-btn:hover { filter: brightness(1.06); }
+
+    .auto-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    }
+
+    .auto-btn.active {
+      filter: brightness(0.96);
+      transform: translateY(2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 16px 8px 24px;
+      }
+
+      .layout {
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        max-width: 100%;
+      }
+
+      .left-column {
+        width: 100%;
+        align-items: center;
+      }
+
+      .bowl {
+        width: 140px;
+        height: 140px;
+        font-size: 18px;
+      }
+
+      .bowl::before {
+        top: 14px;
+        left: 22px;
+        width: 54px;
+        height: 54px;
+      }
+
+      .auto-controls {
+        margin-top: 20px;
+        gap: 16px;
+      }
+
+      .auto-btn {
+        width: 96px;
+        height: 78px;
+        border-radius: 18px;
+        font-size: 15px;
+      }
+
+      .right-panel {
+        width: 100%;
+        max-width: 520px;
+      }
+    }
+  </style>
+ </head>
+<body>
+  <div class="cover">
+    <img src="铜钵封面.jpg" alt="铜钵冥想封面" />
+  </div>
+  <h1>铜钵敲击声音模拟</h1>
+  <div class="author-tag">作者：南京医大 高兴亚</div>
+
+  <div class="layout">
+    <div class="left-column">
+      <div class="bowl-grid">
+        <div class="bowl bowl-1" data-index="0">钵 1</div>
+        <div class="bowl bowl-2" data-index="1">钵 2</div>
+        <div class="bowl bowl-3" data-index="2">钵 3</div>
+        <div class="bowl bowl-4" data-index="3">钵 4</div>
+      </div>
+
+      <div class="auto-controls">
+        <button class="auto-btn" data-minutes="5"><span>5分</span><span class="sub">自动演奏</span></button>
+        <button class="auto-btn" data-minutes="10"><span>10分</span><span class="sub">自动演奏</span></button>
+        <button class="auto-btn" data-minutes="15"><span>15分</span><span class="sub">自动演奏</span></button>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="panel-header">
+        <div class="panel-title">声音参数</div>
+        <button class="btn-small" id="btn-init-audio">点击开启声音</button>
+      </div>
+
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-index="0">钵 1</div>
+        <div class="tab" data-index="1">钵 2</div>
+        <div class="tab" data-index="2">钵 3</div>
+        <div class="tab" data-index="3">钵 4</div>
+      </div>
+
+      <div id="param-container">
+        <div class="param-row">
+          <div class="param-label-row">
+            <div class="param-name">基频</div>
+            <div class="param-value"><span id="val-base">180</span> Hz</div>
+          </div>
+          <input id="slider-base" type="range" min="80" max="600" step="1" value="180" />
+        </div>
+
+        <div class="param-row">
+          <div class="param-label-row">
+            <div class="param-name">差频（高频 - 低频）</div>
+            <div class="param-value"><span id="val-detune">1.5</span> Hz</div>
+          </div>
+          <input id="slider-detune" type="range" min="1" max="10" step="0.1" value="1.5" />
+        </div>
+
+        <div class="param-row">
+          <div class="param-label-row">
+            <div class="param-name">音量差（高/低）</div>
+            <div class="param-value"><span id="val-ratio">0.9</span></div>
+          </div>
+          <input id="slider-ratio" type="range" min="0.5" max="1" step="0.01" value="0.9" />
+        </div>
+
+        <div class="param-row">
+          <div class="param-label-row">
+            <div class="param-name">整体音量</div>
+            <div class="param-value"><span id="val-volume">0.8</span></div>
+          </div>
+          <input id="slider-volume" type="range" min="0.2" max="1.2" step="0.01" value="0.8" />
+        </div>
+
+        <div class="param-row">
+          <div class="param-label-row">
+            <div class="param-name">半衰期</div>
+            <div class="param-value"><span id="val-half">8.0</span> 秒</div>
+          </div>
+          <input id="slider-half" type="range" min="2" max="16" step="0.5" value="8" />
+        </div>
+
+        <div class="param-row">
+          <div class="param-name">预置音色</div>
+          <div class="presets">
+            <button class="preset-btn" data-preset="clear">清脆</button>
+            <button class="preset-btn" data-preset="deep">深沉</button>
+            <button class="preset-btn" data-preset="warm">温暖</button>
+            <button class="preset-btn" data-preset="bright">明亮</button>
+          </div>
+        </div>
+
+        <div class="param-row">
+          <div class="param-name">配置与演奏</div>
+          <div class="presets">
+            <button class="preset-btn" id="btn-save-config">存储配置</button>
+            <button class="preset-btn" id="btn-load-config">打开配置</button>
+            <button class="preset-btn" id="btn-toggle-record">开始记录演奏</button>
+            <button class="preset-btn" id="btn-play-performance">播放演奏</button>
+            <input type="file" id="file-config" accept="application/json" style="display:none;" />
+          </div>
+        </div>
+
+        <div class="hint">
+          请先点击右上角“开启声音”按钮，然后点击任意铜钵进行敲击。<br />
+          通过上方标签可以选择不同铜钵，为每一个铜钵单独设置参数或应用预置音色。
+        </div>
+
+        <div class="status-line" id="status-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const bowls = document.querySelectorAll('.bowl');
+    const tabs = document.querySelectorAll('.tab');
+    const btnInit = document.getElementById('btn-init-audio');
+
+    const sliderBase = document.getElementById('slider-base');
+    const sliderDetune = document.getElementById('slider-detune');
+    const sliderRatio = document.getElementById('slider-ratio');
+    const sliderVolume = document.getElementById('slider-volume');
+    const sliderHalf = document.getElementById('slider-half');
+
+    const valBase = document.getElementById('val-base');
+    const valDetune = document.getElementById('val-detune');
+    const valRatio = document.getElementById('val-ratio');
+    const valVolume = document.getElementById('val-volume');
+    const valHalf = document.getElementById('val-half');
+    const statusLine = document.getElementById('status-line');
+
+    const presetButtons = document.querySelectorAll('.preset-btn');
+    const autoButtons = document.querySelectorAll('.auto-btn');
+    const btnSaveConfig = document.getElementById('btn-save-config');
+    const btnLoadConfig = document.getElementById('btn-load-config');
+    const btnToggleRecord = document.getElementById('btn-toggle-record');
+    const btnPlayPerformance = document.getElementById('btn-play-performance');
+    const fileConfigInput = document.getElementById('file-config');
+
+    let audioCtx = null;
+    let currentTab = 0;
+
+    let isRecording = false;
+    let recordBaseTime = 0;
+    let performance = [];
+    let playTimeoutIds = [];
+
+    let autoPlayTimeoutId = null;
+    let autoPlayActive = false;
+    let autoPlayEndTime = 0;
+    let autoActiveButton = null;
+    let lastAutoIndex = -1;
+
+    const defaultPresets = {
+      clear:  { base: 420, detune: 5.5, ratio: 0.85, volume: 0.6, half: 5.5 },
+      deep:   { base: 160, detune: 1.8, ratio: 0.75, volume: 1.0, half: 10.0 },
+      warm:   { base: 260, detune: 2.7, ratio: 0.9,  volume: 0.85, half: 8.0 },
+      bright: { base: 520, detune: 7.0, ratio: 0.95, volume: 0.8, half: 6.0 }
+    };
+
+    const bowlParams = [
+      { base: 180, detune: 1.8, ratio: 0.75, volume: 1.0, half: 10.0 },
+      { base: 260, detune: 2.7, ratio: 0.9,  volume: 0.85, half: 8.0 },
+      { base: 520, detune: 7.0, ratio: 0.95, volume: 0.6, half: 6.0 },
+      { base: 420, detune: 5.5, ratio: 0.85, volume: 0.5, half: 5.5 }
+    ];
+
+    function updateSlidersFromCurrent() {
+      const p = bowlParams[currentTab];
+      sliderBase.value = p.base;
+      sliderDetune.value = p.detune;
+      sliderRatio.value = p.ratio;
+      sliderVolume.value = p.volume;
+      sliderHalf.value = p.half;
+      valBase.textContent = Number(p.base).toFixed(0);
+      valDetune.textContent = Number(p.detune).toFixed(1);
+      valRatio.textContent = Number(p.ratio).toFixed(2);
+      valVolume.textContent = Number(p.volume).toFixed(2);
+      valHalf.textContent = Number(p.half).toFixed(1);
+      statusLine.textContent = `当前钵：钵 ${currentTab + 1} ｜ 低频约 ${p.base.toFixed(0)} Hz，高频约 ${(p.base + p.detune).toFixed(1)} Hz`;
+    }
+
+    function applySlidersToCurrent() {
+      const p = bowlParams[currentTab];
+      p.base = parseFloat(sliderBase.value);
+      p.detune = parseFloat(sliderDetune.value);
+      p.ratio = parseFloat(sliderRatio.value);
+      p.volume = parseFloat(sliderVolume.value);
+      p.half = parseFloat(sliderHalf.value);
+      updateSlidersFromCurrent();
+    }
+
+    sliderBase.addEventListener('input', () => {
+      valBase.textContent = sliderBase.value;
+      applySlidersToCurrent();
+    });
+
+    sliderDetune.addEventListener('input', () => {
+      valDetune.textContent = Number(sliderDetune.value).toFixed(1);
+      applySlidersToCurrent();
+    });
+
+    sliderRatio.addEventListener('input', () => {
+      valRatio.textContent = Number(sliderRatio.value).toFixed(2);
+      applySlidersToCurrent();
+    });
+
+    sliderVolume.addEventListener('input', () => {
+      valVolume.textContent = Number(sliderVolume.value).toFixed(2);
+      applySlidersToCurrent();
+    });
+
+    sliderHalf.addEventListener('input', () => {
+      valHalf.textContent = Number(sliderHalf.value).toFixed(1);
+      applySlidersToCurrent();
+    });
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const idx = parseInt(tab.dataset.index, 10);
+        if (idx === currentTab) return;
+        currentTab = idx;
+        tabs.forEach(t => t.classList.toggle('active', t === tab));
+        updateSlidersFromCurrent();
+      });
+    });
+
+    function initAudioOnce() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        btnInit.textContent = '声音已开启';
+        btnInit.disabled = true;
+        btnInit.style.opacity = '0.7';
+      } else if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    btnInit.addEventListener('click', () => {
+      initAudioOnce();
+    });
+
+    function hitBowl(index, volumeScale = 1) {
+      if (!audioCtx) {
+        statusLine.textContent = '请先点击“开启声音”按钮。';
+        return;
+      }
+
+      const now = audioCtx.currentTime;
+      const p = bowlParams[index];
+      const base = Math.max(40, p.base);
+      const detune = Math.max(0.1, p.detune);
+      const ratio = Math.min(1.0, Math.max(0.1, p.ratio));
+      const volume = Math.min(1.2, Math.max(0.2, p.volume ?? 0.8));
+      const half = Math.max(0.5, p.half);
+
+      const lf = base;
+      const hf = base + detune;
+
+      const oscLow = audioCtx.createOscillator();
+      const oscHigh = audioCtx.createOscillator();
+      const gainLow = audioCtx.createGain();
+      const gainHigh = audioCtx.createGain();
+      const master = audioCtx.createGain();
+
+      oscLow.type = 'sine';
+      oscHigh.type = 'sine';
+      oscLow.frequency.value = lf;
+      oscHigh.frequency.value = hf;
+
+      const baseAmp = 0.4 * volume * volumeScale;
+      const lowAmp = baseAmp;
+      const highAmp = baseAmp * ratio;
+
+      const tau = half / Math.log(2);
+      const duration = half * 4;
+
+      gainLow.gain.setValueAtTime(lowAmp, now);
+      gainHigh.gain.setValueAtTime(highAmp, now);
+
+      const endTime = now + duration;
+      gainLow.gain.setTargetAtTime(0.0001, now, tau);
+      gainHigh.gain.setTargetAtTime(0.0001, now, tau);
+
+      master.gain.setValueAtTime(0.8, now);
+
+      oscLow.connect(gainLow);
+      oscHigh.connect(gainHigh);
+      gainLow.connect(master);
+      gainHigh.connect(master);
+      master.connect(audioCtx.destination);
+
+      oscLow.start(now);
+      oscHigh.start(now);
+      oscLow.stop(endTime + 0.5);
+      oscHigh.stop(endTime + 0.5);
+
+      const bowlEl = bowls[index];
+      bowlEl.classList.add('playing');
+      setTimeout(() => bowlEl.classList.remove('playing'), 220);
+    }
+
+    bowls.forEach(bowl => {
+      bowl.addEventListener('click', () => {
+        const idx = parseInt(bowl.dataset.index, 10);
+        initAudioOnce();
+        hitBowl(idx);
+
+        if (isRecording && audioCtx) {
+          const t = audioCtx.currentTime - recordBaseTime;
+          performance.push({ index: idx, time: t });
+        }
+      });
+    });
+
+    presetButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.preset;
+        const preset = defaultPresets[key];
+        if (!preset) return;
+        bowlParams[currentTab] = { ...preset };
+        updateSlidersFromCurrent();
+      });
+    });
+
+    function downloadConfig(data, filename) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    btnSaveConfig?.addEventListener('click', () => {
+      const payload = {
+        bowls: bowlParams,
+        performance
+      };
+      const ts = new Date();
+      const pad = n => n.toString().padStart(2, '0');
+      const name = `bowl-config-${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.json`;
+      downloadConfig(payload, name);
+      statusLine.textContent = '配置已导出为 JSON 文件。';
+    });
+
+    btnLoadConfig?.addEventListener('click', () => {
+      if (!fileConfigInput) return;
+      fileConfigInput.value = '';
+      fileConfigInput.click();
+    });
+
+    fileConfigInput?.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const obj = JSON.parse(reader.result);
+          if (Array.isArray(obj.bowls) && obj.bowls.length === bowlParams.length) {
+            for (let i = 0; i < bowlParams.length; i += 1) {
+              const b = obj.bowls[i];
+              if (!b) continue;
+              bowlParams[i] = {
+                base: Number(b.base ?? bowlParams[i].base),
+                detune: Number(b.detune ?? bowlParams[i].detune),
+                ratio: Number(b.ratio ?? bowlParams[i].ratio),
+                volume: Number(b.volume ?? bowlParams[i].volume),
+                half: Number(b.half ?? bowlParams[i].half)
+              };
+            }
+            updateSlidersFromCurrent();
+          }
+          if (Array.isArray(obj.performance)) {
+            performance = obj.performance
+              .map(ev => ({ index: Number(ev.index), time: Number(ev.time) }))
+              .filter(ev => Number.isFinite(ev.index) && Number.isFinite(ev.time) && ev.time >= 0);
+          }
+          statusLine.textContent = '配置已从文件加载。';
+        } catch (err) {
+          statusLine.textContent = '配置文件解析失败。';
+        }
+      };
+      reader.readAsText(file, 'utf-8');
+    });
+
+    btnToggleRecord?.addEventListener('click', () => {
+      initAudioOnce();
+      if (!audioCtx) return;
+      if (!isRecording) {
+        performance = [];
+        recordBaseTime = audioCtx.currentTime;
+        isRecording = true;
+        btnToggleRecord.textContent = '停止记录演奏';
+        statusLine.textContent = '正在记录演奏，请开始敲击铜钵。';
+      } else {
+        isRecording = false;
+        btnToggleRecord.textContent = '开始记录演奏';
+        statusLine.textContent = `演奏记录完成，共 ${performance.length} 次敲击。`;
+      }
+    });
+
+    function stopScheduledPlayback() {
+      if (playTimeoutIds.length) {
+        playTimeoutIds.forEach(id => clearTimeout(id));
+        playTimeoutIds = [];
+      }
+    }
+
+    btnPlayPerformance?.addEventListener('click', () => {
+      if (!performance.length) {
+        statusLine.textContent = '当前没有演奏记录，请先记录演奏。';
+        return;
+      }
+      initAudioOnce();
+      if (!audioCtx) return;
+
+      stopScheduledPlayback();
+
+      const startTime = audioCtx.currentTime;
+      performance.forEach(ev => {
+        const delayMs = Math.max(0, ev.time * 1000);
+        const id = setTimeout(() => {
+          const idx = Math.floor(ev.index);
+          if (idx >= 0 && idx < bowls.length) {
+            hitBowl(idx);
+          }
+        }, delayMs);
+        playTimeoutIds.push(id);
+      });
+      statusLine.textContent = '正在回放演奏。';
+    });
+
+    function stopAutoPlay() {
+      if (autoPlayTimeoutId !== null) {
+        clearTimeout(autoPlayTimeoutId);
+        autoPlayTimeoutId = null;
+      }
+      autoPlayActive = false;
+      if (autoActiveButton) {
+        autoActiveButton.classList.remove('active');
+        autoActiveButton = null;
+      }
+    }
+
+    function scheduleNextAuto() {
+      if (!autoPlayActive || !audioCtx) return;
+      const now = audioCtx.currentTime;
+      const remaining = autoPlayEndTime - now;
+      if (remaining <= 1) {
+        stopAutoPlay();
+        statusLine.textContent = '自动演奏已结束。';
+        return;
+      }
+
+      let delay = 5 + Math.random() * 10; // 5-15 秒
+      if (delay > remaining) delay = remaining;
+
+      autoPlayTimeoutId = setTimeout(() => {
+        if (!audioCtx || !autoPlayActive) return;
+        const now2 = audioCtx.currentTime;
+        const remaining2 = autoPlayEndTime - now2;
+        const fadeWindow = 60; // 最后 1 分钟渐弱
+        let volumeScale = 1;
+        if (remaining2 <= fadeWindow) {
+          volumeScale = Math.max(0.1, remaining2 / fadeWindow);
+        }
+        let idx = Math.floor(Math.random() * bowls.length);
+        if (bowls.length > 1 && idx === lastAutoIndex) {
+          idx = (idx + 1) % bowls.length;
+        }
+        lastAutoIndex = idx;
+        hitBowl(idx, volumeScale);
+        scheduleNextAuto();
+      }, delay * 1000);
+    }
+
+    function startAutoPlay(minutes, btn) {
+      initAudioOnce();
+      if (!audioCtx) return;
+
+      // 再次点击同一个按钮则停止
+      if (autoPlayActive && autoActiveButton === btn) {
+        stopAutoPlay();
+        statusLine.textContent = '自动演奏已停止。';
+        return;
+      }
+
+      stopAutoPlay();
+
+      const now = audioCtx.currentTime;
+      autoPlayEndTime = now + minutes * 60;
+      autoPlayActive = true;
+      autoActiveButton = btn;
+      autoActiveButton.classList.add('active');
+
+      // 立刻敲击第一个音：优先从钵 1 开始
+      let firstIdx = 0;
+      if (!(firstIdx >= 0 && firstIdx < bowls.length)) {
+        firstIdx = Math.floor(Math.random() * bowls.length);
+      }
+      lastAutoIndex = firstIdx;
+      hitBowl(firstIdx, 1);
+
+      statusLine.textContent = `已开始 ${minutes} 分钟自动演奏（间隔 5-15 秒，最后 1 分钟音量渐弱）`;
+      scheduleNextAuto();
+    }
+
+    autoButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const minutes = parseInt(btn.dataset.minutes, 10);
+        if (!Number.isFinite(minutes) || minutes <= 0) return;
+        startAutoPlay(minutes, btn);
+      });
+    });
+
+    updateSlidersFromCurrent();
+  </script>
+</body>
+</html>
